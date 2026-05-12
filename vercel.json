@@ -1,7 +1,7 @@
 {
   "crons": [
-    { "path": "/api/cron/send-sms", "schedule": "0 * * * *" },
-    { "path": "/api/cron/auto-default", "schedule": "5 * * * *" },
-    { "path": "/api/cron/weekly-summary", "schedule": "10 * * * *" }
+    { "path": "/api/cron/send-sms", "schedule": "0 1 * * *" },
+    { "path": "/api/cron/auto-default", "schedule": "5 3 * * *" },
+    { "path": "/api/cron/weekly-summary", "schedule": "10 23 * * 0" }
   ]
 }

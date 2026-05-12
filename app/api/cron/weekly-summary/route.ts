@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { sendSms } from "@/lib/twilio";
 import { computeStreak } from "@/lib/streak";
-import { getLocalHourMinute, getLocalDate } from "@/lib/timezone";
-import { toZonedTime } from "date-fns-tz";
+import { getLocalDate } from "@/lib/timezone";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -12,21 +11,12 @@ export async function POST(req: NextRequest) {
   }
 
   const settings = await db.fetchSettings();
-  const { hour, dayOfWeek } = getLocalHourMinute(settings.timezone);
-
-  // Sunday = 0, run at 20:00
-  if (dayOfWeek !== 0 || hour !== 20) {
-    return NextResponse.json({ skipped: true, dayOfWeek, hour });
-  }
-
   const today = getLocalDate(settings.timezone);
 
-  // Avoid duplicate summary on same day
   if (settings.last_summary_sent === today) {
     return NextResponse.json({ skipped: true, reason: "already_sent" });
   }
 
-  // Get last 7 days
   const allEntries = await db.getAllEntries();
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     .toISOString()
