@@ -4,6 +4,7 @@ const COOKIE_NAME = "coc_session";
 
 const PUBLIC_PATHS = [
   "/login",
+  "/api/auth/login",
   "/api/sms/inbound",
   "/api/cron/send-sms",
   "/api/cron/auto-default",
