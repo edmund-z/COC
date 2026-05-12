@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { db } from "@/lib/supabase";
 import { computeLongestStreak } from "@/lib/streak";
 import SettingsClient from "./SettingsClient";

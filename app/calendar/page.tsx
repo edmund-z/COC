@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { db } from "@/lib/supabase";
 import { computeStreak } from "@/lib/streak";
 import { getLocalDate } from "@/lib/timezone";
