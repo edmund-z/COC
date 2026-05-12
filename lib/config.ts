@@ -16,7 +16,7 @@ export const appConfig = {
   twilioFrom:
     process.env.TWILIO_FROM || "+18667539734",
   appUrl:
-    (process.env.NEXT_PUBLIC_APP_URL || "https://honest.edmundzheng.com").trim(),
+    (process.env.NEXT_PUBLIC_APP_URL || "https://cocreal.vercel.app").trim(),
   cookieSecret:
     process.env.COOKIE_SECRET ||
     "e90cba32850a5f4ee47422ef21e363e22c5213e7cbf17b7ce0860bcd0c6bfa2b",
