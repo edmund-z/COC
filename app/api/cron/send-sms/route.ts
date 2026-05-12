@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { sendSms } from "@/lib/twilio";
+import { sendPushNotification, PushSubscription } from "@/lib/webpush";
 import { generateToken } from "@/lib/token";
 import { getLocalDate } from "@/lib/timezone";
 import { appConfig } from "@/lib/config";
@@ -9,7 +9,6 @@ import { isAuthenticated } from "@/lib/auth";
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const isManual = req.headers.get("x-cron-trigger") === "manual";
-  // Manual trigger requires cookie auth; cron trigger requires Bearer secret
   if (isManual && !isAuthenticated(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -25,13 +24,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "already_logged" });
   }
 
+  if (!settings.push_subscription) {
+    return NextResponse.json({ skipped: true, reason: "no_subscription" });
+  }
+
   const token = generateToken();
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
   await db.insertToken(token, today, expiresAt);
 
-  const link = `${appConfig.appUrl}/log/${token}`;
-  const body = `Create or Consume today? Reply C or X. Or tap: ${link}`;
+  const url = `${appConfig.appUrl}/log/${token}`;
+  await sendPushNotification(settings.push_subscription as unknown as PushSubscription, {
+    title: "Create or Consume?",
+    body: "Tap to log today.",
+    url,
+  });
 
-  await sendSms(settings.phone, body);
   return NextResponse.json({ ok: true, today });
 }

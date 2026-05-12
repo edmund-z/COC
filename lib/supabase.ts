@@ -24,6 +24,7 @@ export interface Settings {
   timezone: string;
   phone: string;
   last_summary_sent: string | null;
+  push_subscription: Record<string, unknown> | null;
 }
 
 function getClient() {

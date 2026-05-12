@@ -21,6 +21,7 @@ export default async function SettingsPage() {
       totalEntries={totalEntries}
       createPct={createPct}
       longestStreak={longestStreak}
+      hasSubscription={settings.push_subscription !== null}
     />
   );
 }

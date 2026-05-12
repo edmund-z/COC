@@ -25,4 +25,11 @@ export const appConfig = {
     "e82c37fee125de2af2ee5843aee4a029c7254f5701feb80e122bb7b705b699ac",
   accessPassword:
     process.env.ACCESS_PASSWORD || "honest2026",
+  vapidPublicKey:
+    process.env.VAPID_PUBLIC_KEY ||
+    "BAqLWjLJoxGa9-zZeVSc6TZAx6FZSvkGs3iC7gXHHdD54qPxCziElvvkFnrdpIjrwYfba49krVu6A2b1w-vm4IE",
+  vapidPrivateKey:
+    process.env.VAPID_PRIVATE_KEY ||
+    "amZfbu7MdnJ2HG5a3wB6UaR0sgdi5gAI0pgQFa5GifU",
+  vapidEmail: "mailto:admin@honest.edmundzheng.com",
 };
