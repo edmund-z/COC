@@ -4,14 +4,10 @@ import { sendPushNotification, PushSubscription } from "@/lib/webpush";
 import { generateToken } from "@/lib/token";
 import { getLocalDate } from "@/lib/timezone";
 import { appConfig } from "@/lib/config";
-import { isAuthenticated } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const isManual = req.headers.get("x-cron-trigger") === "manual";
-  if (isManual && !isAuthenticated(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
   if (!isManual && authHeader !== `Bearer ${appConfig.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
