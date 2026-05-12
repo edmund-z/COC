@@ -3,8 +3,10 @@
 const _sid = ["AC", "47a51e6049cba9b2eebe03bc2388914f"].join("");
 
 export const appConfig = {
-  supabaseUrl:
-    (process.env.SUPABASE_URL || "https://zuotuysenmrrqckiqcmy.supabase.co").trim(),
+  supabaseUrl: (() => {
+    const u = (process.env.SUPABASE_URL || "").trim();
+    return u.startsWith("http") ? u : "https://zuotuysenmrrqckiqcmy.supabase.co";
+  })(),
   supabaseKey:
     process.env.SUPABASE_SERVICE_KEY ||
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1b3R1eXNlbm1ycnFja2lxY215Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODYxMjA3MiwiZXhwIjoyMDk0MTg4MDcyfQ.qBYdkWGX7etmkPpMLevQLxq8mRGg-4Y1TDE-l1QZlaI",
