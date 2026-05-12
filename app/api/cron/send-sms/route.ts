@@ -4,10 +4,16 @@ import { sendSms } from "@/lib/twilio";
 import { generateToken } from "@/lib/token";
 import { getLocalDate } from "@/lib/timezone";
 import { appConfig } from "@/lib/config";
+import { isAuthenticated } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${appConfig.cronSecret}`) {
+  const isManual = req.headers.get("x-cron-trigger") === "manual";
+  // Manual trigger requires cookie auth; cron trigger requires Bearer secret
+  if (isManual && !isAuthenticated(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isManual && authHeader !== `Bearer ${appConfig.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

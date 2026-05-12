@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import Link from "next/link";
 import { SUPPORTED_TIMEZONES } from "@/lib/timezone";
 
 interface Props {
@@ -33,6 +34,22 @@ export default function SettingsClient({
     setSaved(true);
   }
 
+  const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function handleTestSms() {
+    setSmsStatus("sending");
+    try {
+      const res = await fetch("/api/cron/send-sms", {
+        method: "POST",
+        headers: { "x-cron-trigger": "manual" },
+      });
+      const data = await res.json();
+      setSmsStatus(data.ok || data.skipped ? "sent" : "error");
+    } catch {
+      setSmsStatus("error");
+    }
+  }
+
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/login";
@@ -40,7 +57,10 @@ export default function SettingsClient({
 
   return (
     <main className="max-w-md mx-auto px-4 py-8 flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Settings</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Settings</h1>
+        <Link href="/calendar" className="text-sm text-gray-500 underline">← Calendar</Link>
+      </div>
 
       <section className="grid grid-cols-3 gap-3 text-center">
         <Stat label="Total entries" value={String(totalEntries)} />
@@ -71,6 +91,24 @@ export default function SettingsClient({
           {saving ? "Saving..." : saved ? "Saved!" : "Save"}
         </button>
       </form>
+
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={handleTestSms}
+          disabled={smsStatus === "sending"}
+          className="border border-black rounded px-3 py-2 text-base disabled:opacity-50"
+        >
+          {smsStatus === "idle" && "Send test SMS now"}
+          {smsStatus === "sending" && "Sending..."}
+          {smsStatus === "sent" && "✓ Sent! Check your phone"}
+          {smsStatus === "error" && "Failed — check Twilio"}
+        </button>
+        {smsStatus === "sent" && (
+          <p className="text-xs text-gray-400 text-center">
+            If already logged today, SMS was skipped (by design)
+          </p>
+        )}
+      </div>
 
       <button
         onClick={handleLogout}
