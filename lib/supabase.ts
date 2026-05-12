@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { appConfig } from "./config";
 
 export type Choice = "create" | "consume";
 
@@ -26,17 +27,10 @@ export interface Settings {
 }
 
 function getClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase env vars");
-  return createClient(url, key);
+  return createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
 }
 
 export const db = {
-  getSettings(): ReturnType<ReturnType<typeof createClient>["from"]> {
-    return getClient().from("settings");
-  },
-
   async fetchSettings(): Promise<Settings> {
     const { data, error } = await getClient()
       .from("settings")

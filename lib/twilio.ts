@@ -1,16 +1,12 @@
 import twilio from "twilio";
+import { appConfig } from "./config";
 
 function getClient() {
-  const sid = process.env.TWILIO_SID;
-  const auth = process.env.TWILIO_AUTH;
-  if (!sid || !auth) throw new Error("Missing Twilio env vars");
-  return twilio(sid, auth);
+  return twilio(appConfig.twilioSid, appConfig.twilioAuth);
 }
 
 export async function sendSms(to: string, body: string): Promise<void> {
-  const from = process.env.TWILIO_FROM;
-  if (!from) throw new Error("TWILIO_FROM not set");
-  await getClient().messages.create({ to, from, body });
+  await getClient().messages.create({ to, from: appConfig.twilioFrom, body });
 }
 
 export function parseSmsChoice(body: string): "create" | "consume" | null {

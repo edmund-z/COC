@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { appConfig } from "@/lib/config";
 
 const COOKIE_NAME = "coc_session";
 
@@ -20,7 +21,7 @@ async function checkCookie(req: NextRequest): Promise<boolean> {
   if (lastDot === -1) return false;
   const value = signed.slice(0, lastDot);
   const sig = signed.slice(lastDot + 1);
-  const secret = process.env.COOKIE_SECRET;
+  const secret = appConfig.cookieSecret;
   if (!secret) return false;
   try {
     const encoder = new TextEncoder();

@@ -1,14 +1,13 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { appConfig } from "./config";
 
 const COOKIE_NAME = "coc_session";
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const ONE_YEAR_S = 365 * 24 * 60 * 60;
 
 function sign(value: string): string {
-  const secret = process.env.COOKIE_SECRET;
-  if (!secret) throw new Error("COOKIE_SECRET not set");
-  const hmac = createHmac("sha256", secret);
+  const hmac = createHmac("sha256", appConfig.cookieSecret);
   hmac.update(value);
   return `${value}.${hmac.digest("hex")}`;
 }
@@ -34,8 +33,6 @@ export function makeSessionCookie(): {
   value: string;
   options: Record<string, unknown>;
 } {
-  const password = process.env.ACCESS_PASSWORD;
-  if (!password) throw new Error("ACCESS_PASSWORD not set");
   const value = sign(`auth:${Date.now()}`);
   return {
     name: COOKIE_NAME,
@@ -44,7 +41,7 @@ export function makeSessionCookie(): {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: ONE_YEAR_MS / 1000,
+      maxAge: ONE_YEAR_S,
       path: "/",
     },
   };
@@ -69,4 +66,8 @@ export function clearSessionCookie() {
     value: "",
     options: { maxAge: 0, path: "/" },
   };
+}
+
+export function checkPassword(password: string): boolean {
+  return password === appConfig.accessPassword;
 }

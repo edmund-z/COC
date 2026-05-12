@@ -3,10 +3,11 @@ import { db } from "@/lib/supabase";
 import { sendSms } from "@/lib/twilio";
 import { generateToken } from "@/lib/token";
 import { getLocalDate } from "@/lib/timezone";
+import { appConfig } from "@/lib/config";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${appConfig.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -22,8 +23,7 @@ export async function POST(req: NextRequest) {
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
   await db.insertToken(token, today, expiresAt);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const link = `${appUrl}/log/${token}`;
+  const link = `${appConfig.appUrl}/log/${token}`;
   const body = `Create or Consume today? Reply C or X. Or tap: ${link}`;
 
   await sendSms(settings.phone, body);
