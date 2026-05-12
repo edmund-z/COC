@@ -85,12 +85,15 @@ export const db = {
 
   async getEntriesForMonth(year: number, month: number): Promise<Entry[]> {
     const start = `${year}-${String(month).padStart(2, "0")}-01`;
-    const end = `${year}-${String(month).padStart(2, "0")}-31`;
+    // Use first day of next month minus 1 day to get true last day
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const end = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
     const { data, error } = await getClient()
       .from("entries")
       .select("*")
       .gte("date", start)
-      .lte("date", end);
+      .lt("date", end);
     if (error) throw error;
     return data as Entry[];
   },

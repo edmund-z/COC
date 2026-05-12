@@ -34,7 +34,7 @@ export default function SettingsClient({
     setSaved(true);
   }
 
-  const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [smsStatus, setSmsStatus] = useState<"idle" | "sending" | "sent" | "skipped" | "error">("idle");
 
   async function handleTestSms() {
     setSmsStatus("sending");
@@ -44,7 +44,9 @@ export default function SettingsClient({
         headers: { "x-cron-trigger": "manual" },
       });
       const data = await res.json();
-      setSmsStatus(data.ok || data.skipped ? "sent" : "error");
+      if (data.ok) setSmsStatus("sent");
+      else if (data.skipped) setSmsStatus("skipped");
+      else setSmsStatus("error");
     } catch {
       setSmsStatus("error");
     }
@@ -100,14 +102,10 @@ export default function SettingsClient({
         >
           {smsStatus === "idle" && "Send test SMS now"}
           {smsStatus === "sending" && "Sending..."}
-          {smsStatus === "sent" && "✓ Sent! Check your phone"}
-          {smsStatus === "error" && "Failed — check Twilio"}
+          {smsStatus === "sent" && "✓ Text sent — check your phone"}
+          {smsStatus === "skipped" && "Skipped — already logged today"}
+          {smsStatus === "error" && "Failed — check Twilio console"}
         </button>
-        {smsStatus === "sent" && (
-          <p className="text-xs text-gray-400 text-center">
-            If already logged today, SMS was skipped (by design)
-          </p>
-        )}
       </div>
 
       <button
