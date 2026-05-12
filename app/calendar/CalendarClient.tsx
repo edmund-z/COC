@@ -117,7 +117,7 @@ export default function CalendarClient({
             <button
               key={cell.date}
               onClick={() => {
-                if (cell.entry?.why_word) {
+                if (cell.entry?.why_word && cell.date) {
                   setTooltip(
                     tooltip?.date === cell.date
                       ? null
