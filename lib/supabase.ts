@@ -25,6 +25,7 @@ export interface Settings {
   phone: string;
   last_summary_sent: string | null;
   push_subscription: Record<string, unknown> | null;
+  notification_hour: number | null;
 }
 
 function getClient() {

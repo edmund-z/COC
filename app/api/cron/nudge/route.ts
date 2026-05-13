@@ -6,8 +6,8 @@ import { getLocalDate } from "@/lib/timezone";
 import { appConfig } from "@/lib/config";
 
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
   const isManual = req.headers.get("x-cron-trigger") === "manual";
+  const authHeader = req.headers.get("authorization");
   if (!isManual && authHeader !== `Bearer ${appConfig.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -15,19 +15,8 @@ export async function POST(req: NextRequest) {
   const settings = await db.fetchSettings();
   const today = getLocalDate(settings.timezone);
 
-  if (!isManual) {
-    const { getLocalHour } = await import("@/lib/timezone");
-    const localHour = getLocalHour(settings.timezone);
-    const notifHour = settings.notification_hour ?? 20;
-    if (localHour !== notifHour) {
-      return NextResponse.json({ skipped: true, reason: "not_notification_hour" });
-    }
-  }
-
   const existing = await db.getEntryForDate(today);
-  if (existing) {
-    return NextResponse.json({ skipped: true, reason: "already_logged" });
-  }
+  if (existing) return NextResponse.json({ skipped: true, reason: "already_logged" });
 
   if (!settings.push_subscription) {
     return NextResponse.json({ skipped: true, reason: "no_subscription" });
@@ -37,12 +26,11 @@ export async function POST(req: NextRequest) {
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
   await db.insertToken(token, today, expiresAt);
 
-  const url = `${appConfig.appUrl}/log/${token}`;
   await sendPushNotification(settings.push_subscription as unknown as PushSubscription, {
-    title: "Create or Consume?",
-    body: "Tap to log today.",
-    url,
+    title: "Still haven't logged today",
+    body: "Create or consume? Don't break the habit.",
+    url: `${appConfig.appUrl}/log/${token}`,
   });
 
-  return NextResponse.json({ ok: true, today });
+  return NextResponse.json({ ok: true });
 }

@@ -22,6 +22,7 @@ export default async function SettingsPage() {
       createPct={createPct}
       longestStreak={longestStreak}
       hasSubscription={settings.push_subscription !== null}
+      notificationHour={settings.notification_hour ?? 20}
     />
   );
 }

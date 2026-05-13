@@ -7,12 +7,21 @@ import { SUPPORTED_TIMEZONES } from "@/lib/timezone";
 const VAPID_PUBLIC_KEY =
   "BAqLWjLJoxGa9-zZeVSc6TZAx6FZSvkGs3iC7gXHHdD54qPxCziElvvkFnrdpIjrwYfba49krVu6A2b1w-vm4IE";
 
+const NOTIFICATION_HOURS = [17, 18, 19, 20, 21, 22, 23];
+
+function formatHour(h: number): string {
+  const suffix = h >= 12 ? "PM" : "AM";
+  const display = h > 12 ? h - 12 : h === 0 ? 12 : h;
+  return `${display}:00 ${suffix}`;
+}
+
 interface Props {
   timezone: string;
   totalEntries: number;
   createPct: number;
   longestStreak: number;
   hasSubscription: boolean;
+  notificationHour: number;
 }
 
 function urlBase64ToUint8Array(base64: string) {
@@ -28,8 +37,10 @@ export default function SettingsClient({
   createPct,
   longestStreak,
   hasSubscription: initialHasSub,
+  notificationHour: initialNotifHour,
 }: Props) {
   const [timezone, setTimezone] = useState(initialTz);
+  const [notificationHour, setNotificationHour] = useState(initialNotifHour);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [notifState, setNotifState] = useState<
@@ -109,7 +120,7 @@ export default function SettingsClient({
     await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ timezone }),
+      body: JSON.stringify({ timezone, notification_hour: notificationHour }),
     });
     setSaving(false);
     setSaved(true);
@@ -180,10 +191,10 @@ export default function SettingsClient({
         )}
       </section>
 
-      {/* Timezone */}
+      {/* Settings form */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm text-gray-500">Timezone (for cron timing)</span>
+          <span className="text-sm text-gray-500">Timezone</span>
           <select
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
@@ -196,12 +207,26 @@ export default function SettingsClient({
             ))}
           </select>
         </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm text-gray-500">Notification time (local)</span>
+          <select
+            value={notificationHour}
+            onChange={(e) => setNotificationHour(parseInt(e.target.value))}
+            className="border border-gray-300 rounded px-3 py-2 text-base"
+          >
+            {NOTIFICATION_HOURS.map((h) => (
+              <option key={h} value={h}>
+                {formatHour(h)}
+              </option>
+            ))}
+          </select>
+        </label>
         <button
           type="submit"
           disabled={saving}
           className="bg-black text-white rounded px-3 py-2 text-base disabled:opacity-50"
         >
-          {saving ? "Saving..." : saved ? "Saved!" : "Save timezone"}
+          {saving ? "Saving..." : saved ? "Saved!" : "Save settings"}
         </button>
       </form>
 

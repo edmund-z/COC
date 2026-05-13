@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
-type Stage = "choice" | "why" | "done";
+type Stage = "choice" | "why" | "confirming" | "done";
 
 interface Props {
   token: string;
@@ -23,6 +23,15 @@ export default function LogClient({ token, initialError }: Props) {
     if (stage === "why") whyRef.current?.focus();
   }, [stage]);
 
+  useEffect(() => {
+    if (stage === "confirming") {
+      const timer = setTimeout(() => {
+        window.location.href = "/calendar";
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [stage]);
+
   async function submitChoice(c: "create" | "consume", whyWord?: string) {
     const res = await fetch(`/api/log/${token}`, {
       method: "POST",
@@ -35,7 +44,7 @@ export default function LogClient({ token, initialError }: Props) {
       setStage("done");
     } else {
       setStreak(data.streak);
-      setStage("done");
+      setStage("confirming");
     }
   }
 
@@ -86,8 +95,10 @@ export default function LogClient({ token, initialError }: Props) {
 
   if (stage === "why") {
     return (
-      <main className="fixed inset-0 flex flex-col items-center justify-center px-6 gap-6"
-        style={{ background: choice === "create" ? "#10b981" : "#ef4444" }}>
+      <main
+        className="fixed inset-0 flex flex-col items-center justify-center px-6 gap-6"
+        style={{ background: choice === "create" ? "#10b981" : "#ef4444" }}
+      >
         <p className="text-white text-2xl font-semibold capitalize">{choice}</p>
         <form onSubmit={handleWhySubmit} className="w-full max-w-xs flex flex-col gap-3">
           <input
@@ -113,26 +124,26 @@ export default function LogClient({ token, initialError }: Props) {
     );
   }
 
-  // done
+  if (stage === "confirming") {
+    return (
+      <main
+        className="fixed inset-0 flex flex-col items-center justify-center gap-4"
+        style={{ background: choice === "create" ? "#10b981" : "#ef4444" }}
+      >
+        <p className="text-white text-8xl font-light">✓</p>
+        <p className="text-white text-3xl font-bold uppercase tracking-widest">
+          {choice}
+        </p>
+        {streak !== null && (
+          <p className="text-white/80 text-lg">{streak} day streak</p>
+        )}
+      </main>
+    );
+  }
+
   return (
     <main className="fixed inset-0 flex flex-col items-center justify-center px-6 gap-6 bg-white">
-      {error ? (
-        <p className="text-red-500 text-center text-lg">{error}</p>
-      ) : (
-        <>
-          <p className="text-2xl font-semibold">
-            Logged:{" "}
-            <span style={{ color: choice === "create" ? "#10b981" : "#ef4444" }}>
-              {choice?.toUpperCase()}
-            </span>
-          </p>
-          {streak !== null && (
-            <p className="text-gray-600 text-lg">
-              Streak: <strong>{streak}</strong> day{streak !== 1 ? "s" : ""}
-            </p>
-          )}
-        </>
-      )}
+      <p className="text-red-500 text-center text-lg">{error}</p>
       <Link href="/calendar" className="text-black underline text-base">
         View calendar
       </Link>
