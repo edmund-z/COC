@@ -3,7 +3,7 @@ import { db } from "@/lib/supabase";
 import { getLocalDate, getPreviousDate } from "@/lib/timezone";
 import { appConfig } from "@/lib/config";
 
-export async function POST(req: NextRequest) {
+async function handler(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${appConfig.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,3 +21,6 @@ export async function POST(req: NextRequest) {
   await db.insertEntry(yesterday, "consume", "auto", true);
   return NextResponse.json({ ok: true, date: yesterday });
 }
+
+export function GET(req: NextRequest) { return handler(req); }
+export function POST(req: NextRequest) { return handler(req); }

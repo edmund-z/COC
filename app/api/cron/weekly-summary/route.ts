@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { sendSms } from "@/lib/twilio";
+import { sendPushNotification, PushSubscription } from "@/lib/webpush";
 import { computeStreak } from "@/lib/streak";
 import { getLocalDate } from "@/lib/timezone";
 import { appConfig } from "@/lib/config";
 
-export async function POST(req: NextRequest) {
+async function handler(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${appConfig.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -18,23 +18,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "already_sent" });
   }
 
+  if (!settings.push_subscription) {
+    return NextResponse.json({ skipped: true, reason: "no_subscription" });
+  }
+
   const allEntries = await db.getAllEntries();
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const weekEntries = allEntries.filter((e) => e.date >= weekAgo);
 
   const createCount = weekEntries.filter((e) => e.choice === "create").length;
   const consumeCount = weekEntries.filter((e) => e.choice === "consume").length;
   const streak = computeStreak(allEntries);
-  const totalEntries = allEntries.length;
-  const allCreateCount = allEntries.filter((e) => e.choice === "create").length;
-  const createPct =
-    totalEntries > 0 ? Math.round((allCreateCount / totalEntries) * 100) : 0;
 
-  const body = `Last week: ${createCount} Create, ${consumeCount} Consume. Current streak: ${streak}. All-time Create %: ${createPct}%.`;
-  await sendSms(settings.phone, body);
+  await sendPushNotification(settings.push_subscription as unknown as PushSubscription, {
+    title: "Weekly summary",
+    body: `${createCount} create, ${consumeCount} consume. Streak: ${streak} days.`,
+    url: `${appConfig.appUrl}/calendar`,
+  });
+
   await db.updateSettings({ last_summary_sent: today });
-
   return NextResponse.json({ ok: true });
 }
+
+export function GET(req: NextRequest) { return handler(req); }
+export function POST(req: NextRequest) { return handler(req); }

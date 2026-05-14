@@ -5,7 +5,7 @@ import { generateToken } from "@/lib/token";
 import { getLocalDate } from "@/lib/timezone";
 import { appConfig } from "@/lib/config";
 
-export async function POST(req: NextRequest) {
+async function handler(req: NextRequest) {
   const isManual = req.headers.get("x-cron-trigger") === "manual";
   const authHeader = req.headers.get("authorization");
   if (!isManual && authHeader !== `Bearer ${appConfig.cronSecret}`) {
@@ -34,3 +34,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+export function GET(req: NextRequest) { return handler(req); }
+export function POST(req: NextRequest) { return handler(req); }
