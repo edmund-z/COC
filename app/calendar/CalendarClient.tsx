@@ -37,17 +37,17 @@ export default function CalendarClient({
   const [entries, setEntries] = useState<Entry[]>(initialEntries);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [loggingDate, setLoggingDate] = useState<string | null>(null);
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => {
+    router.prefetch("/log");
     router.prefetch("/settings");
   }, [router]);
 
   const todayYear = parseInt(todayStr.slice(0, 4));
   const todayMonth = parseInt(todayStr.slice(5, 7));
   const isCurrentMonth = year === todayYear && month === todayMonth;
-  const showLogToday = isCurrentMonth && !todayEntry && !loggingDate;
+  const showLogToday = isCurrentMonth && !todayEntry;
 
   async function navigate(dir: -1 | 1) {
     let newMonth = month + dir;
@@ -75,23 +75,9 @@ export default function CalendarClient({
     touchStartX.current = null;
   }
 
-  async function handleLogDate(date: string) {
-    setLoggingDate(date);
-    try {
-      const res = await fetch("/api/log/new", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date }),
-      });
-      const data = await res.json();
-      if (data.path) {
-        router.push(data.path);
-        return;
-      }
-    } catch {
-      // fall through
-    }
-    setLoggingDate(null);
+  function handleLogDate(date: string) {
+    if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(10);
+    router.push(date === todayStr ? "/log" : `/log?date=${date}`);
   }
 
   const entryMap: Record<string, Entry> = {};
@@ -219,7 +205,7 @@ export default function CalendarClient({
       {showLogToday && (
         <button
           onClick={() => handleLogDate(todayStr)}
-          className="w-full mt-4 bg-black text-white rounded-xl py-3 text-base font-semibold"
+          className="w-full mt-4 bg-black text-white rounded-xl py-3 text-base font-semibold active:scale-95 transition-transform touch-manipulation"
         >
           Log today
         </button>
@@ -272,10 +258,9 @@ export default function CalendarClient({
             ) : (
               <button
                 onClick={() => handleLogDate(selectedDate)}
-                disabled={loggingDate === selectedDate}
-                className="w-full bg-black text-white rounded-xl py-3 text-base font-semibold disabled:opacity-50"
+                className="w-full bg-black text-white rounded-xl py-3 text-base font-semibold active:scale-95 transition-transform touch-manipulation"
               >
-                {loggingDate === selectedDate ? "Opening..." : "Log this day"}
+                Log this day
               </button>
             )}
           </div>

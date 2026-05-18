@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { generateToken } from "@/lib/token";
 import { getLocalDate } from "@/lib/timezone";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
+  const { choice, why_word, date: dateOverride } = body;
+
+  if (choice !== "create" && choice !== "consume") {
+    return NextResponse.json({ error: "Invalid choice" }, { status: 400 });
+  }
+
   const settings = await db.fetchSettings();
   const todayStr = getLocalDate(settings.timezone);
-  const date = (body.date as string) ?? todayStr;
+  const date =
+    typeof dateOverride === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateOverride)
+      ? dateOverride
+      : todayStr;
 
   if (date > todayStr) {
     return NextResponse.json({ error: "Cannot log future dates" }, { status: 400 });
@@ -18,9 +26,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Already logged" }, { status: 409 });
   }
 
-  const token = generateToken();
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  await db.insertToken(token, date, expiresAt);
-
-  return NextResponse.json({ path: `/log/${token}` });
+  await db.insertEntry(date, choice, why_word ?? undefined);
+  return NextResponse.json({ ok: true });
 }

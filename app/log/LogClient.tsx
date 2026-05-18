@@ -4,21 +4,25 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-type Stage = "choice" | "why" | "confirming" | "done";
+type Stage = "choice" | "why" | "confirming" | "error";
 
 interface Props {
-  token: string;
+  date?: string;
   initialError?: string;
 }
 
-export default function LogClient({ token, initialError }: Props) {
+function vibrate(ms: number) {
+  if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    navigator.vibrate(ms);
+  }
+}
+
+export default function LogClient({ date, initialError }: Props) {
   const router = useRouter();
-  const [stage, setStage] = useState<Stage>(initialError ? "done" : "choice");
+  const [stage, setStage] = useState<Stage>(initialError ? "error" : "choice");
   const [choice, setChoice] = useState<"create" | "consume" | null>(null);
   const [why, setWhy] = useState("");
-  const [streak, setStreak] = useState<number | null>(null);
   const [error, setError] = useState(initialError ?? "");
-  const [pressing, setPressing] = useState<string | null>(null);
   const whyRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -31,37 +35,40 @@ export default function LogClient({ token, initialError }: Props) {
 
   useEffect(() => {
     if (stage === "confirming") {
+      vibrate(20);
       const timer = setTimeout(() => {
         router.replace("/calendar");
         router.refresh();
-      }, 1500);
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [stage, router]);
 
   async function submitChoice(c: "create" | "consume", whyWord?: string) {
-    const res = await fetch(`/api/log/${token}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ choice: c, why_word: whyWord ?? null }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error ?? "Something went wrong.");
-      setStage("done");
-    } else {
-      setStreak(data.streak);
-      setStage("confirming");
+    setChoice(c);
+    setStage("confirming");
+
+    try {
+      const res = await fetch("/api/log/quick", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ choice: c, why_word: whyWord ?? null, date }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Failed to log.");
+        setStage("error");
+      }
+    } catch {
+      setError("Network error.");
+      setStage("error");
     }
   }
 
   function handleChoicePress(c: "create" | "consume") {
-    setPressing(c);
-    setTimeout(() => {
-      setPressing(null);
-      setChoice(c);
-      setStage("why");
-    }, 100);
+    vibrate(10);
+    setChoice(c);
+    setStage("why");
   }
 
   async function handleWhySubmit(e: React.FormEvent) {
@@ -78,21 +85,13 @@ export default function LogClient({ token, initialError }: Props) {
       <main className="fixed inset-0 flex flex-col">
         <button
           onPointerDown={() => handleChoicePress("create")}
-          style={{
-            background: pressing === "create" ? "#0d9268" : "#10b981",
-            transition: "background 100ms",
-          }}
-          className="flex-1 w-full flex items-center justify-center text-white text-4xl font-bold uppercase tracking-widest select-none touch-manipulation"
+          className="flex-1 w-full flex items-center justify-center bg-[#10b981] active:bg-[#0d9268] text-white text-4xl font-bold uppercase tracking-widest select-none touch-manipulation transition-colors"
         >
           Create
         </button>
         <button
           onPointerDown={() => handleChoicePress("consume")}
-          style={{
-            background: pressing === "consume" ? "#c53030" : "#ef4444",
-            transition: "background 100ms",
-          }}
-          className="flex-1 w-full flex items-center justify-center text-white text-4xl font-bold uppercase tracking-widest select-none touch-manipulation"
+          className="flex-1 w-full flex items-center justify-center bg-[#ef4444] active:bg-[#c53030] text-white text-4xl font-bold uppercase tracking-widest select-none touch-manipulation transition-colors"
         >
           Consume
         </button>
@@ -119,12 +118,15 @@ export default function LogClient({ token, initialError }: Props) {
           />
           <button
             type="submit"
-            className="text-white border border-white rounded py-2 text-lg"
+            className="text-white border border-white rounded py-2 text-lg active:scale-95 transition-transform touch-manipulation"
           >
             Submit
           </button>
         </form>
-        <button onClick={handleSkip} className="text-white/70 underline text-base">
+        <button
+          onClick={handleSkip}
+          className="text-white/70 underline text-base touch-manipulation"
+        >
           skip
         </button>
       </main>
@@ -141,9 +143,6 @@ export default function LogClient({ token, initialError }: Props) {
         <p className="text-white text-3xl font-bold uppercase tracking-widest">
           {choice}
         </p>
-        {streak !== null && (
-          <p className="text-white/80 text-lg">{streak} day streak</p>
-        )}
       </main>
     );
   }
@@ -152,7 +151,7 @@ export default function LogClient({ token, initialError }: Props) {
     <main className="fixed inset-0 flex flex-col items-center justify-center px-6 gap-6 bg-white">
       <p className="text-red-500 text-center text-lg">{error}</p>
       <Link href="/calendar" className="text-black underline text-base">
-        View calendar
+        Back to calendar
       </Link>
     </main>
   );

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { sendPushNotification, PushSubscription } from "@/lib/webpush";
-import { generateToken } from "@/lib/token";
 import { getLocalDate, getLocalHour } from "@/lib/timezone";
 import { appConfig } from "@/lib/config";
 
@@ -30,14 +29,10 @@ async function handler(req: NextRequest, isCron: boolean) {
     return NextResponse.json({ skipped: true, reason: "no_subscription" });
   }
 
-  const token = generateToken();
-  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-  await db.insertToken(token, today, expiresAt);
-
   await sendPushNotification(settings.push_subscription as unknown as PushSubscription, {
     title: "Create or Consume?",
     body: "Tap to log today.",
-    url: `${appConfig.appUrl}/log/${token}`,
+    url: `${appConfig.appUrl}/log`,
   });
 
   return NextResponse.json({ ok: true, today });
