@@ -115,11 +115,6 @@ export default function SettingsClient({
     setSaved(true);
   }
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/login";
-  }
-
   return (
     <main className="max-w-md mx-auto px-4 py-8 flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -204,13 +199,6 @@ export default function SettingsClient({
           {saving ? "Saving..." : saved ? "Saved!" : "Save settings"}
         </button>
       </form>
-
-      <button
-        onClick={handleLogout}
-        className="text-gray-400 text-sm underline self-start"
-      >
-        Log out
-      </button>
     </main>
   );
 }

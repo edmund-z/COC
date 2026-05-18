@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Stage = "choice" | "why" | "confirming" | "done";
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function LogClient({ token, initialError }: Props) {
+  const router = useRouter();
   const [stage, setStage] = useState<Stage>(initialError ? "done" : "choice");
   const [choice, setChoice] = useState<"create" | "consume" | null>(null);
   const [why, setWhy] = useState("");
@@ -20,17 +22,22 @@ export default function LogClient({ token, initialError }: Props) {
   const whyRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    router.prefetch("/calendar");
+  }, [router]);
+
+  useEffect(() => {
     if (stage === "why") whyRef.current?.focus();
   }, [stage]);
 
   useEffect(() => {
     if (stage === "confirming") {
       const timer = setTimeout(() => {
-        window.location.href = "/calendar";
+        router.replace("/calendar");
+        router.refresh();
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [stage]);
+  }, [stage, router]);
 
   async function submitChoice(c: "create" | "consume", whyWord?: string) {
     const res = await fetch(`/api/log/${token}`, {

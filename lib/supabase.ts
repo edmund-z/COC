@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { appConfig } from "./config";
 
 export type Choice = "create" | "consume";
@@ -28,8 +28,12 @@ export interface Settings {
   notification_hour: number | null;
 }
 
-function getClient() {
-  return createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
+let _client: SupabaseClient | null = null;
+function getClient(): SupabaseClient {
+  if (!_client) {
+    _client = createClient(appConfig.supabaseUrl, appConfig.supabaseKey);
+  }
+  return _client;
 }
 
 export const db = {

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { generateToken } from "@/lib/token";
 import { getLocalDate } from "@/lib/timezone";
-import { appConfig } from "@/lib/config";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -23,5 +22,5 @@ export async function POST(req: NextRequest) {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   await db.insertToken(token, date, expiresAt);
 
-  return NextResponse.json({ url: `${appConfig.appUrl}/log/${token}` });
+  return NextResponse.json({ path: `/log/${token}` });
 }

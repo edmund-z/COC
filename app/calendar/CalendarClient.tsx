@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Entry } from "@/lib/supabase";
 
 interface WeekStats {
@@ -30,6 +31,7 @@ export default function CalendarClient({
   todayEntry,
   weekStats,
 }: Props) {
+  const router = useRouter();
   const [year, setYear] = useState(initialYear);
   const [month, setMonth] = useState(initialMonth);
   const [entries, setEntries] = useState<Entry[]>(initialEntries);
@@ -37,6 +39,10 @@ export default function CalendarClient({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [loggingDate, setLoggingDate] = useState<string | null>(null);
   const touchStartX = useRef<number | null>(null);
+
+  useEffect(() => {
+    router.prefetch("/settings");
+  }, [router]);
 
   const todayYear = parseInt(todayStr.slice(0, 4));
   const todayMonth = parseInt(todayStr.slice(5, 7));
@@ -78,8 +84,8 @@ export default function CalendarClient({
         body: JSON.stringify({ date }),
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.path) {
+        router.push(data.path);
         return;
       }
     } catch {
@@ -235,11 +241,11 @@ export default function CalendarClient({
       {/* Day detail sheet */}
       {selectedDate && (
         <div
-          className="fixed inset-0 z-20 bg-black/20"
+          className="fixed inset-0 z-20 bg-black/20 animate-fade-in"
           onClick={() => setSelectedDate(null)}
         >
           <div
-            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 flex flex-col gap-4 shadow-xl"
+            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 flex flex-col gap-4 shadow-xl animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
