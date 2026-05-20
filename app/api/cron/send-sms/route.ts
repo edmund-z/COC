@@ -17,7 +17,7 @@ async function handler(req: NextRequest, isCron: boolean) {
 
   if (isCron) {
     const localHour = getLocalHour(settings.timezone);
-    if (localHour !== 20) {
+    if (localHour !== 21) {
       return NextResponse.json({ skipped: true, reason: "not_notification_hour" });
     }
   }
